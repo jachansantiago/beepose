@@ -102,7 +102,7 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
                     end = int(num_frames)
                 output_name = os.path.join(output_folder,'%d'%(model_num+1)+file.split('/')[-1][:-4]+'_%s.json'%sufix)
                 filenames.append(output_name)
-                processes[model_num] = mp.Process(target=process_video_fragment,args=(file,model_day,model_nigth,G,fraction,start,end,limbSeq,mapIdx,np1,np2,output_name,numparts,int(fragment_size/2)))
+                processes[model_num] = mp.Process(target=process_video_fragment,args=(file,model_day,G,fraction,start,end,limbSeq,mapIdx,np1,np2,output_name,numparts,int(fragment_size/2)))
                 print('starting process%d'%model_num,'File:%s, start:%d, end: %d, gpu:%s, fraction%d'%(file,start,end,str(G),fraction))
                 
                 processes[model_num].start()
