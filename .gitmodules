@@ -1,0 +1,3 @@
+[submodule "beeid"]
+	path = beeid
+	url = https://github.com/binarySequoia/beeid.git

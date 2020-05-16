@@ -112,7 +112,7 @@ def inference(input_image,model, params, model_params,show=False,np1=19,np2=38,r
                 distance_tolerance=310,numparts=5,
                 mapIdx=[[0,1],[2,3],[4,5],[6,7],[8,9]],
                 limbSeq=[[1,3],[3,2],[2,4],[2,5],[1,2]],
-                image_type='RGB'):
+                image_type='BGR'):
     """
     This function uses the model to generate the heatmaps and pafs then use them to produce the poses. 
     
