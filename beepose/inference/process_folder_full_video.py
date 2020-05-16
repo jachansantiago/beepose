@@ -5,11 +5,12 @@ import os, sys,glob,shutil
 import multiprocessing as mp
 import cv2
 from beepose.utils.merging import merging
-from beepose.tracking.hungarian_tracking import hungarian_tracking
+from beepose.tracking.hungarian_tracking import hungarian_tracking, video_hungarian
 from beepose.tracking.kalman_tracking import kalman_tracking
 from beepose.event_detection.event_detection import do_event_detection_folder,events_update
 from beepose.inference.pollen_detection import pollen_classifier_fragment
 from beepose.inference.inference_video import process_video_fragment,process_video_by_batch
+from beeid.video import Video
 import time 
 import logging
 import json
@@ -122,29 +123,46 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
         print('______________________')  
         print('Merging all the files')
         print('______________________')
-        merged_name = merging(filenames)    
+        merged_name = merging(filenames)
+        
+        
+        video_config = {
+            'DETECTIONS_PATH' : merged_name,
+            'VIDEO_PATH': file,
+        }
+        
+        video_skeleton = Video.from_config(video_config)
+        video_name = file.split("/")[-1].split('.')[0]
+        skeleton_file = video_name + "_skeleton.json"
+        skeleton_file = os.path.join(output_folder,  skeleton_file)
+        print(skeleton_file)
+        video_skeleton.save(skeleton_file)
+        print("skeleton file saved.")    
         print(merged_name)
+
+
         print('==============================================================================')
         print('                          %s  Tracking                                        '%tracking)
         print('==============================================================================')
         tic_tracking = time.time()
         if tracking == 'hungarian':
-        
-            t = mp.Process(target=hungarian_tracking,args=(merged_name,cost_tracking,'',part))
-            print('Starting hungarian tracking of file %s'%merged_name)
-            t.start()
             
-        elif tracking == 'kalman':
-            t = mp.Process(target=kalman_tracking,args=(merged_name,'',box_size,part))
-            print('Starting kalman tracking of file %s'%merged_name)
+            t = mp.Process(target=video_hungarian, args=(skeleton_file, video_name, output_folder))
+            print('Starting hungarian tracking of file %s' % skeleton_file)
             t.start()
-        elif tracking == 'both':
-            t1 = mp.Process(target=kalman_tracking,args=(merged_name,'',box_size,part))
-            print('Starting hungarian tracking of file %s'%merged_name)
-            t1.start()
-            t2 = mp.Process(target=hungarian_tracking,args=(merged_name,cost_tracking,'',part))
-            print('Starting kalman tracking of file %s'%merged_name)
-            t2.start()
+
+            
+        # elif tracking == 'kalman':
+        #     t = mp.Process(target=kalman_tracking,args=(merged_name,'',box_size,part))
+        #     print('Starting kalman tracking of file %s'%merged_name)
+        #     t.start()
+        # elif tracking == 'both':
+        #     t1 = mp.Process(target=kalman_tracking,args=(merged_name,'',box_size,part))
+        #     print('Starting hungarian tracking of file %s'%merged_name)
+        #     t1.start()
+        #     t2 = mp.Process(target=hungarian_tracking,args=(merged_name,cost_tracking,'',part))
+        #     print('Starting kalman tracking of file %s'%merged_name)
+        #     t2.start()
     try: 
         if tracking=='both':
             t1.join()
