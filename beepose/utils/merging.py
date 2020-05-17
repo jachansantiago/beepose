@@ -2,6 +2,7 @@ import json
 import argparse
 import glob,os
 from beepose.utils.util import read_json
+from beeid.video import Video
 
 def merging(filenames):
     
@@ -35,6 +36,22 @@ def merging(filenames):
         json.dump(merged, outfile)
     print('Success')
     return output_name
+
+
+def merging_pollen(pollen_names):
+    v = Video.load(pollen_names[0])
+    pollen_fname = pollen_names[0].split("/")[-1]
+    folder = "/".join(pollen_names[0].split("/")[:-1])
+    
+    for pname in pollen_names[1:]:
+        vi = Video.load(pname)
+        v.append(vi)
+
+    out_filename = os.path.join(folder, pollen_fname)
+    v.save(out_filename)
+    return out_filename 
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

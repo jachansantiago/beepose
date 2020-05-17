@@ -12,6 +12,9 @@ import cv2
 from keras.models import load_model
 import argparse
 import math
+from beeid.body import Body
+from beeid.video import Video
+from tqdm import tqdm
 
 FPS = 20.0
 
@@ -103,6 +106,42 @@ def load_for_pollen(folder,detections_path,track_path,video_path,folder_video ='
     vidcap = cv2.VideoCapture(video)
     model=load_model(model_json,model_weights)
     return path,detections,trk,vidcap,model
+
+
+
+def pollen_classifier_fragment_skeleton(skeleton_file, out_filename, model_file, gpu, gpu_fraction, start, end):
+    if type(gpu)==int:
+        os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+        os.environ["CUDA_VISIBLE_DEVICES"]="%d"%gpu
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
+    session = tf.Session(config=config)
+    folder = '/'.join(skeleton_file.split('/')[:-1])
+    model = load_model(model_file,compile=False)
+
+    video = Video.load(skeleton_file)
+    video = video[start:end]
+
+    Body.width=180
+    Body.height=300
+    
+    for frame in tqdm(video):
+        for body in frame:
+            if body.suppressed:
+                continue
+
+            x, y = body.center
+            if x <350 or x > 2200 or y > 1200:
+                continue
+
+            im = body.image/255.
+
+            score=model.predict(np.array([im]))
+
+            body.pollen_score = float(score[0][1])
+    video.save(out_filename)
+    return
 
 def pollen_classifier_fragment(detections_file,trk_file,video_file,model_file,gpu,gpu_fraction,trk_pollen_name,start=0,limit=72000):
     

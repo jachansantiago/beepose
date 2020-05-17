@@ -12,12 +12,10 @@ import argparse
 from beeid.video import Video
 
 
-def video_hungarian(fname, video_name, output_folder, cost=200, nms_overlap_fraction=0.6):
+def video_hungarian(fname, outfile, cost=200, nms_overlap_fraction=0.6):
     video = Video.load(fname)
     video.hungarian_tracking(cost, nms_overlap_fraction)
-    tracking_filename = video_name + '_hungarian.json'
-    tracking_path = os.path.join(output_folder,  tracking_filename)
-    video.save(tracking_path)
+    video.save(outfile)
     return
 
 
