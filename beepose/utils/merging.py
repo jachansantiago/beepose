@@ -40,7 +40,7 @@ def merging(filenames):
 
 def merging_pollen(pollen_names):
     v = Video.load(pollen_names[0])
-    pollen_fname = pollen_names[0].split("/")[-1]
+    pollen_fname = pollen_names[0].split("/")[-1][1:]
     folder = "/".join(pollen_names[0].split("/")[:-1])
     
     for pname in pollen_names[1:]:
