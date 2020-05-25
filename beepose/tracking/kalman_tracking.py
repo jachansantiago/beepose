@@ -12,6 +12,15 @@ import glob,os
 import math
 from beepose.tracking.sort import  * 
 from scipy.spatial import distance
+from beeid.video import Video
+
+
+def video_kalman(fname, outfile, bbox=200, nms_overlap_fraction=0.6):
+    video = Video.load(fname)
+    video.sort_tracking(bbox, nms_overlap_fraction)
+    video.save(outfile)
+    return
+
 
 def nms(det_id,pos, posList,threshold):
     
