@@ -7,7 +7,7 @@ import cv2
 from beepose.utils.merging import merging, merging_pollen
 from beepose.tracking.hungarian_tracking import hungarian_tracking, video_hungarian
 from beepose.tracking.kalman_tracking import kalman_tracking, video_kalman
-from beepose.event_detection.event_detection import do_event_detection_folder,events_update
+from beepose.event_detection.event_detection import do_event_detection_folder,events_update, video_track_classification
 from beepose.inference.pollen_detection import pollen_classifier_fragment, pollen_classifier_fragment_skeleton
 from beepose.inference.inference_video import process_video_fragment,process_video_by_batch
 from beeid.video import Video
@@ -67,6 +67,9 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
     os.makedirs(recicle_folder,exist_ok=True)
     
     files_videos = glob.glob(os.path.join(videos_path,'*.mp4'))
+    
+    detections_files = []
+    pollen_files = []
     tracks_files = []
     
     
@@ -76,15 +79,15 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
     for ix,file in enumerate(files_videos):
         profiling[file]={}
         print('__processing_video: ',ix,' of ', len(files_videos) )
-        if ix >1: 
-            try: 
-                if tracking=='both':
-                    t1.join()
-                    t2.join()
-                else:
-                    t.join()
-            except: 
-                print('Process for tracking not defined or already finished')
+        # if ix >1: 
+        #     try: 
+        #         if tracking=='both':
+        #             t1.join()
+        #             t2.join()
+        #         else:
+        #             t.join()
+        #     except: 
+        #         print('Process for tracking not defined or already finished')
         
         tic_total = time.time()
         print('start processing video %s'%file)
@@ -129,115 +132,32 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
         
         video_config = {
             'DETECTIONS_PATH' : merged_name,
-            'VIDEO_PATH': file,
+            'VIDEO_PATH': file
         }
         
         video_skeleton = Video.from_config(video_config)
         video_name = file.split("/")[-1].split('.')[0]
         skeleton_file = video_name + "_skeleton.json"
-        skeleton_file = os.path.join(output_folder,  skeleton_file)
-        print(skeleton_file)
-        video_skeleton.save(skeleton_file)
+        skeleton_path = os.path.join(output_folder,  skeleton_file)
+        print(skeleton_path)
+        video_skeleton.save(skeleton_path)
         print("skeleton file saved.")    
         print(merged_name)
 
+        detections_files.append((skeleton_file, len(video_skeleton)))
 
-        print('==============================================================================')
-        print('                          %s  Tracking                                        '%tracking)
-        print('==============================================================================')
-        tic_tracking = time.time()
-        if tracking == 'hungarian':
-            tracking_filename = video_name + '_hungarian.json'
-            tracking_path = os.path.join(output_folder,  tracking_filename)
-            tracks_files.append((tracking_filename, num_frames))
-            t = mp.Process(target=video_hungarian, args=(skeleton_file, tracking_path))
-            print('Starting hungarian tracking of file %s' % skeleton_file)
-            t.start()    
-        elif tracking == 'kalman':
-            tracking_filename = video_name + '_kalman.json'
-            tracking_path = os.path.join(output_folder,  tracking_filename)
-            tracks_files.append((tracking_filename, num_frames))
-            t = mp.Process(target=video_kalman, args=(skeleton_file, tracking_path))
-            print('Starting kalman tracking of file %s' % skeleton_file)
-            t.start()
-        elif tracking == 'both':
-            tracking_filename = video_name + '_hungarian.json'
-            tracking_path = os.path.join(output_folder,  tracking_filename)
-            tracks_files.append((tracking_filename, num_frames))
-            t1 = mp.Process(target=video_hungarian, args=(skeleton_file, tracking_path))
-            print('Starting hungarian tracking of file %s' % skeleton_file)
-            t1.start()
-            
-            tracking_filename = video_name + '_kalman.json'
-            tracking_path = os.path.join(output_folder,  tracking_filename)
-            tracks_files.append((tracking_filename, num_frames))
-            t2 = mp.Process(target=video_kalman, args=(skeleton_file, tracking_path))
-            print('Starting kalman tracking of file %s' % skeleton_file)
-            t2.start()
-    try: 
-        if tracking=='both':
-            t1.join()
-            t2.join()
-        else:
-            t.join()
-    except: 
-        print('Process for tracking not defined or already finished') 
-        
-    #toc_tracking = time.time()    
-    #profiling[file]['tracking']=toc_tracking-tic_tracking
-    print('==============================================================================')
-    print('                         Event Detection                                      ')
-    print('==============================================================================')
-    if event_detection: 
-        if tracking == 'hungarian':
-         
-            prefix = 'id_nms_track_'
-            print('Event detection on file %s'%prefix)
-            e = mp.Process(target=do_event_detection_folder,args=(prefix,'',output_folder,72000))
-            e.start()
-            e.join()
-        elif tracking == 'kalman':
-            prefix = 'id_kalman_tracks.json' 
-            print('Event detection on file %s'%prefix)
-            e = mp.Process(target=do_event_detection_folder,args=(prefix,'',output_folder,72000))
-            e.start()
-            e.join()
-        elif tracking == 'both':
-            prefix = 'id_nms_track_'
-            print('Event detection on file %s'%prefix)
-            e1 = mp.Process(target=do_event_detection_folder,args=(prefix,'',output_folder,72000))
-            e1.start()
-            prefix = 'id_kalman_tracks.json' 
-            print('Event detection on file %s'%prefix)
-            e2 = mp.Process(target=do_event_detection_folder,args=(prefix,'',output_folder,72000))
-            e2.start()
-            e1.join()
-            e2.join()
-            
-    
-    
     MODEL_SIZE_POLLEN = 2.2 
     if process_pollen:
         print('==============================================================================')
         print('                         Pollen Detection                                      ')
         print('==============================================================================')
-        for ix,(file,num_frames) in enumerate(tracks_files):
-            # det_name= 'merged_'+file.split('/')[-1][:-4]+'_detections.json'
-            # det_file = os.path.join(output_folder,det_name)
-            # if tracking in ['hungarian','both']:
-            #     trk_file = os.path.join(output_folder,'track_nms_'+det_name)
-            #     id_trk_file = os.path.join(output_folder,'id_nms_track_'+det_name)
-            # else:
-            #     trk_file = os.path.join(output_folder,det_name[:-4]+'kalman_tracks.json')
-            #     id_trk_file = os.path.join(output_folder,det_name[:-4]+'id_kalman_tracks.json')
+        for ix, (skeleton_file, num_frames) in enumerate(detections_files):
             
             model_file_pollen = model_pollen
         
             num_models_pollen_per_gpu = GPU_mem//MODEL_SIZE_POLLEN
             fraction = 1/num_models_pollen_per_gpu
             processes={}
-            # video = cv2.VideoCapture(file)
-            # num_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
             fragment_size = num_frames//(len(GPU)*num_models_pollen_per_gpu)
             pollen_names =[]
             model_num=0
@@ -248,13 +168,10 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
                     if model_num == (len(GPU)*num_models_pollen_per_gpu)-1:
                         end = int(num_frames)
                         
-                    # trk_pollen_name = str(model_num+1)+'trk_pollen_'+det_file.split('/')[-1]
-                    # if 'kalman' in trk_file.split('/')[-1]:
-                    #     trk_pollen_name = str(model_num+1)+'trk_kalman_pollen_'+det_file.split('/')[-1]
-                    pollen_name = str(i) + "pollen_" + file
+                    pollen_name = str(i) + "pollen_" + skeleton_file
                     pollen_name = os.path.join(output_folder,pollen_name)
                     pollen_names.append(pollen_name)
-                    tracking_file = os.path.join(output_folder,file)
+                    tracking_file = os.path.join(output_folder, skeleton_file)
                     processes[model_num] = mp.Process(target=pollen_classifier_fragment_skeleton,args= (tracking_file,pollen_name,model_file_pollen, G,fraction,start,end))
                     processes[model_num].start()
                     model_num +=1
@@ -263,17 +180,90 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
                 processes[k].join()
                 
             pollen_filename = merging_pollen(pollen_names)
-            # pollen_file = os.path.join(output_folder,pollen_filename)
-            # count_file = os.path.join(output_folder,'Count_v2_id_nms_track_'+det_name)
-            # trk_class_file = os.path.join(output_folder,'TRK_Class_id_nms_track_'+det_name)
+            print(pollen_filename)
+            pollen_file = pollen_filename.split("/")[-1]
+            pollen_files.append((pollen_file, num_frames))
         
-            # events_update(pollen_file,id_trk_file,count_file,trk_class_file)
-            # print('Video Ready to be moved')
-            # shutil.move(file,videos_processed)
-            # print('moving to recicle')
-            # for f in pollen_names:
-            #     shutil.move(f,recicle_folder)
+    else:
+        pollen_files = detections_files
+
+
+
+    print('==============================================================================')
+    print('                          %s  Tracking                                        '%tracking)
+    print('==============================================================================')
+    tic_tracking = time.time()
+    tracking_tasks = list()
+    if tracking == 'hungarian':
+        for ids, (skeleton_file, num_frames) in enumerate(pollen_files):
+            tracking_filename = 'hungarian_' + skeleton_file
+            tracking_path = os.path.join(output_folder,  tracking_filename)
+            tracks_files.append((tracking_filename, num_frames))
+            infile = os.path.join(output_folder, skeleton_file)
+            t = mp.Process(target=video_hungarian, args=(infile, tracking_path))
+            print('Starting hungarian tracking of file %s' % skeleton_file)
+            t.start() 
+            tracking_tasks.append(t)   
+    elif tracking == 'kalman':
+        for ids, (skeleton_file, num_frames) in enumerate(pollen_files):
+            tracking_filename = 'kalman_' + skeleton_file
+            tracking_path = os.path.join(output_folder,  tracking_filename)
+            tracks_files.append((tracking_filename, num_frames))
+            infile = os.path.join(output_folder, skeleton_file)
+            t = mp.Process(target=video_kalman, args=(infile, tracking_path))
+            print('Starting kalman tracking of file %s' % skeleton_file)
+            t.start()
+            tracking_tasks.append(t)  
+    elif tracking == 'both':
+        for ids, (skeleton_file, num_frames) in enumerate(pollen_files):
+            tracking_filename = 'hungarian_' + skeleton_file
+            tracking_path = os.path.join(output_folder,  tracking_filename)
+            tracks_files.append((tracking_filename, num_frames))
+            infile = os.path.join(output_folder, skeleton_file)
+            t1 = mp.Process(target=video_hungarian, args=(infile, tracking_path))
+            print('Starting hungarian tracking of file %s' % skeleton_file)
+            t1.start()
+            tracking_tasks.append(t1) 
         
+            tracking_filename = 'kalman_' + skeleton_file
+            tracking_path = os.path.join(output_folder,  tracking_filename)
+            tracks_files.append((tracking_filename, num_frames))
+            infile = os.path.join(output_folder, skeleton_file)
+            t2 = mp.Process(target=video_kalman, args=(infile, tracking_path))
+            print('Starting kalman tracking of file %s' % skeleton_file)
+            t2.start()
+            tracking_tasks.append(t2) 
+    # try: 
+    #     if tracking=='both':
+    #         t1.join()
+    #         t2.join()
+    #     else:
+    #         t.join()
+    # except: 
+    #     print('Process for tracking not defined or already finished') 
+    for task in tracking_tasks:
+        task.join()
+    #toc_tracking = time.time()    
+    #profiling[file]['tracking']=toc_tracking-tic_tracking
+    print('==============================================================================')
+    print('                         Event Detection                                      ')
+    print('==============================================================================')
+    if event_detection: 
+        event_files = list()
+        procs = list()
+        for ix,(track_file,num_frames) in enumerate(tracks_files):
+            outfile = 'event_' + track_file
+            event_name = os.path.join(output_folder, outfile)
+
+            infile = os.path.join(output_folder, track_file)
+            print('Event detection on file %s'% event_name)
+            t = mp.Process(target=video_track_classification,args=(infile, event_name))
+            t.start()
+            procs.append(t)
+            event_files.append((outfile, num_frames))
+
+        for p in procs:
+            p.join()
             
        
     print('==============================================================================')

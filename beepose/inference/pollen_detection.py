@@ -127,19 +127,12 @@ def pollen_classifier_fragment_skeleton(skeleton_file, out_filename, model_file,
     Body.height=300
     
     for frame in tqdm(video):
-        for body in frame:
-            if body.suppressed:
-                continue
+        bodies, images = frame.bodies_images()
+        images = images/255.
+        score=model.predict(images)
 
-            x, y = body.center
-            if x <350 or x > 2200 or y > 1200:
-                continue
-
-            im = body.image/255.
-
-            score=model.predict(np.array([im]))
-
-            body.pollen_score = float(score[0][1])
+        for body, pscore in zip(bodies, score):
+            body.pollen_score = float(pscore[1])
     video.save(out_filename)
     return
 

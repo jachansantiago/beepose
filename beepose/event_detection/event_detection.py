@@ -12,6 +12,14 @@ import matplotlib.pyplot as plt
 from beepose.utils.util import *
 import re
 import argparse
+from beeid.video import Video
+
+
+def video_track_classification(fname, outfile):
+    video = Video.load(fname)
+    video.track_clasification()
+    video.save(outfile)
+    return
 
 
 def id_frame(trk):
