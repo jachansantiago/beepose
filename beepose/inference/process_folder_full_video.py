@@ -155,7 +155,7 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
             
             model_file_pollen = model_pollen
         
-            num_models_pollen_per_gpu = GPU_mem//MODEL_SIZE_POLLEN
+            num_models_pollen_per_gpu = ((GPU_mem/2)//MODEL_SIZE_POLLEN) -1
             fraction = 1/num_models_pollen_per_gpu
             processes={}
             fragment_size = num_frames//(len(GPU)*num_models_pollen_per_gpu)
@@ -167,10 +167,11 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
                     end = int(start+fragment_size)
                     if model_num == (len(GPU)*num_models_pollen_per_gpu)-1:
                         end = int(num_frames)
-                        
-                    pollen_name = str(i) + "pollen_" + skeleton_file
+                    print("----", start, end)
+                    pollen_name = "{:02}".format(model_num) + "pollen_" + skeleton_file
                     pollen_name = os.path.join(output_folder,pollen_name)
                     pollen_names.append(pollen_name)
+                    print(pollen_name)
                     tracking_file = os.path.join(output_folder, skeleton_file)
                     processes[model_num] = mp.Process(target=pollen_classifier_fragment_skeleton,args= (tracking_file,pollen_name,model_file_pollen, G,fraction,start,end))
                     processes[model_num].start()
@@ -178,6 +179,7 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
             
             for k in processes:
                 processes[k].join()
+            
                 
             pollen_filename = merging_pollen(pollen_names)
             print(pollen_filename)
