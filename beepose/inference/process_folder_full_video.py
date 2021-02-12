@@ -77,76 +77,89 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
     pool = []
     print('___PROCESSING: ',len(files_videos),' VIDEOS___')
     for ix,file in enumerate(files_videos):
-        profiling[file]={}
-        print('__processing_video: ',ix,' of ', len(files_videos) )
-        # if ix >1: 
-        #     try: 
-        #         if tracking=='both':
-        #             t1.join()
-        #             t2.join()
-        #         else:
-        #             t.join()
-        #     except: 
-        #         print('Process for tracking not defined or already finished')
-        
-        tic_total = time.time()
-        print('start processing video %s'%file)
-        video = cv2.VideoCapture(file)
-        num_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
-        print('Video size in frames %d'%num_frames)
-        fragment_size = num_frames//(len(GPU)*number_models)
-        processes={}
-        print('Initializing multiprocessing') 
-        filenames = []
-        model_num=0
-        for G in GPU:
-            for i  in range(number_models):
-                start = int(model_num*fragment_size)
-                end = int(start+fragment_size)
-                if model_num == (len(GPU)*number_models)-1:
-                    end = int(num_frames)
-                output_name = os.path.join(output_folder,'%d'%(model_num+1)+file.split('/')[-1][:-4]+'_%s.json'%sufix)
-                filenames.append(output_name)
-                processes[model_num] = mp.Process(target=process_video_fragment,args=(file,model_day,G,fraction,start,end,limbSeq,mapIdx,np1,np2,output_name,numparts,int(fragment_size/2)))
-                print('starting process%d'%model_num,'File:%s, start:%d, end: %d, gpu:%s, fraction%d'%(file,start,end,str(G),fraction))
-                
-                processes[model_num].start()
-                model_num+=1
-           
-           
-        for k in processes:
-            processes[k].join()
-        
-        print('Video Completed')
-        toc_total = time.time()
-        print ('Total processing time in this video was %.5f' % (toc_total - tic_total))
-        profiling[file]['video']=toc_total - tic_total
-        
-        
-    
-        print('______________________')  
-        print('Merging all the files')
-        print('______________________')
-        merged_name = merging(filenames)
-        
-        
-        video_config = {
-            'DETECTIONS_PATH' : merged_name,
-            'VIDEO_PATH': file
-        }
-        
-        video_skeleton = Video.from_config(video_config)
-        video_name = file.split("/")[-1].split('.')[0]
-        skeleton_file = video_name + "_skeleton.json"
-        skeleton_path = os.path.join(output_folder,  skeleton_file)
-        print(skeleton_path)
-        video_skeleton.save(skeleton_path)
-        print("skeleton file saved.")    
-        print(merged_name)
+        try:
 
-        detections_files.append((skeleton_file, len(video_skeleton)))
+            video_name = file.split("/")[-1].split('.')[0]
+            skeleton_file = video_name + "_skeleton.json"
+            skeleton_path = os.path.join(output_folder,  skeleton_file)
 
-    MODEL_SIZE_POLLEN = 2.2 
+            if os.path.exists(skeleton_path):
+                print("Detection file detected. {} skipped.".format(video_name))
+                continue
+            profiling[file]={}
+            print('__processing_video: ',ix,' of ', len(files_videos) )
+            # if ix >1: 
+            #     try: 
+            #         if tracking=='both':
+            #             t1.join()
+            #             t2.join()
+            #         else:
+            #             t.join()
+            #     except: 
+            #         print('Process for tracking not defined or already finished')
+            
+            tic_total = time.time()
+            print('start processing video %s'%file)
+            video = cv2.VideoCapture(file)
+            num_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
+            print('Video size in frames %d'%num_frames)
+            fragment_size = num_frames//(len(GPU)*number_models)
+            processes={}
+            print('Initializing multiprocessing') 
+            filenames = []
+            model_num=0
+            for G in GPU:
+                for i  in range(number_models):
+                    start = int(model_num*fragment_size)
+                    end = int(start+fragment_size)
+                    if model_num == (len(GPU)*number_models)-1:
+                        end = int(num_frames)
+                    output_name = os.path.join(output_folder,'%d'%(model_num+1)+file.split('/')[-1][:-4]+'_%s.json'%sufix)
+                    filenames.append(output_name)
+                    processes[model_num] = mp.Process(target=process_video_fragment,args=(file,model_day,G,fraction,start,end,limbSeq,mapIdx,np1,np2,output_name,numparts,int(fragment_size/2)))
+                    print('starting process%d'%model_num,'File:%s, start:%d, end: %d, gpu:%s, fraction%d'%(file,start,end,str(G),fraction))
+                    
+                    processes[model_num].start()
+                    model_num+=1
+            
+            
+            for k in processes:
+                processes[k].join()
+            
+            print('Video Completed')
+            toc_total = time.time()
+            print ('Total processing time in this video was %.5f' % (toc_total - tic_total))
+            profiling[file]['video']=toc_total - tic_total
+            
+            
+        
+            print('______________________')  
+            print('Merging all the files')
+            print('______________________')
+            merged_name = merging(filenames)
+            
+            
+            video_config = {
+                'DETECTIONS_PATH' : merged_name,
+                'VIDEO_PATH': file
+            }
+            
+            video_skeleton = Video.from_config(video_config)
+            video_name = file.split("/")[-1].split('.')[0]
+            skeleton_file = video_name + "_skeleton.json"
+            skeleton_path = os.path.join(output_folder,  skeleton_file)
+            print(skeleton_path)
+            video_skeleton.save(skeleton_path)
+            print("skeleton file saved.")    
+            # print(merged_name)
+
+            # detections_files.append((skeleton_file, len(video_skeleton)))
+            detections_files.append((skeleton_file, num_frames))
+        except:
+            with open("video_error.txt", "a") as f:
+                f.write(video_name)
+
+    MODEL_SIZE_POLLEN = 2.2
     if process_pollen:
         print('==============================================================================')
         print('                         Pollen Detection                                      ')
@@ -157,6 +170,7 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
         
             num_models_pollen_per_gpu = ((GPU_mem/2)//MODEL_SIZE_POLLEN) -1
             fraction = 1/num_models_pollen_per_gpu
+            print("fraction : {}".format(fraction))
             processes={}
             fragment_size = num_frames//(len(GPU)*num_models_pollen_per_gpu)
             pollen_names =[]
@@ -501,8 +515,8 @@ def main():
 #     parser.add_argument('--numparts',type=int,default=5, help='number of parts to process')
     parser.add_argument('--model_config', default='../../models/pose/complete_5p_2_model_params.json', type=str, help="Model config json file")
     parser.add_argument('--part',type=int,default=2, help='Index id of Part to be tracked')
-    parser.add_argument('--process_pollen', default=True, action="store_true", help='Whether to apply pollen detection separately. Default is True')
-    parser.add_argument('--event_detection', default=True, action="store_true", help='Whether to apply event detection. Default is True')
+    parser.add_argument('--process_pollen', default=False, action="store_true", help='Whether to apply pollen detection separately. Default is True')
+    parser.add_argument('--event_detection', default=False, action="store_true", help='Whether to apply event detection. Default is True')
     parser.add_argument('--debug',type=bool,default=False,help='If debug is True logging will include profiling and other details')
     SIZEMODEL = 4 # Usually I used up to 4.5 GB per model to avoid memory problem when running.
     
@@ -527,7 +541,7 @@ def main():
     
     videos_path = args.videos_path
     output_folder = args.output_folder
-    number_models_per_gpu = int(GPU_mem//SIZEMODEL)
+    number_models_per_gpu = int(GPU_mem//SIZEMODEL) - 1
     # print(number_models)
     model_day = args.model_day
     model_nigth = args.model_nigth

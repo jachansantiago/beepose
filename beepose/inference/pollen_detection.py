@@ -129,7 +129,7 @@ def pollen_classifier_fragment_skeleton(skeleton_file, out_filename, model_file,
     for frame in tqdm(video):
         bodies, images = frame.bodies_images()
         images = images/255.
-        score=model.predict(images)
+        score=model.predict(images, batch_size=1)
 
         for body, pscore in zip(bodies, score):
             body.pollen_score = float(pscore[1])
