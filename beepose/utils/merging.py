@@ -22,12 +22,11 @@ def merging(filenames):
     print('first file merged')
     if len(filenames)==2:
         print('Only two files merged.')
-        return merged
-    
-    for n in range(2,len(filenames)):
-        det_3= read_json(filenames[n])
-        merged.update(det_3)
-        print('%d file merged'%n)
+    else:    
+        for n in range(2,len(filenames)):
+            det_3= read_json(filenames[n])
+            merged.update(det_3)
+            print('%d file merged'%n)
     
     prefix = '/'.join(filenames[0].split('/')[:-1])+'/'
     filename = filenames[0].split('/')[-1]
