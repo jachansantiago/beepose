@@ -95,7 +95,7 @@ def process_video_fragment(file,model_file_day,gpu,gpu_fraction,start_frame,end_
         input_image =cv2.resize(im,(im.shape[1]//resize_factor,im.shape[0]//resize_factor))
         frame+=1
         canvas,mappings,parts = inference(input_image, model,params,model_params,show=show,np1=np2,np2=np1,
-                                                    resize=resize_factor,limbSeq=limbSeq,mapIdx=mapIdx,numparts=numparts)
+                                                    resize=resize_factor,limbSeq=limbSeq,mapIdx=mapIdx,numparts=numparts,image_type="RGB")
         #print(mappings)
         frame_detections[idx]={}
         frame_detections[idx]['mapping']=mappings
