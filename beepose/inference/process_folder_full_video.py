@@ -10,7 +10,7 @@ from beepose.tracking.kalman_tracking import kalman_tracking, video_kalman
 from beepose.event_detection.event_detection import do_event_detection_folder,events_update, video_track_classification
 from beepose.inference.pollen_detection import pollen_classifier_fragment, pollen_classifier_fragment_skeleton
 from beepose.inference.inference_video import process_video_fragment,process_video_by_batch
-from beeid.video import Video
+from plotbee.video import Video
 import time 
 import logging
 import json

@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
 import argparse
-from beeid.video import Video
+from plotbee.video import Video
 
 
 def video_hungarian(fname, outfile, cost=200, nms_overlap_fraction=0.6):

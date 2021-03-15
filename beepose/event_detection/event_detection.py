@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from beepose.utils.util import *
 import re
 import argparse
-from beeid.video import Video
+from plotbee.video import Video
 
 
 def video_track_classification(fname, outfile):

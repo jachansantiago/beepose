@@ -2,7 +2,7 @@ import json
 import argparse
 import glob,os
 from beepose.utils.util import read_json
-from beeid.video import Video
+from plotbee.video import Video
 
 def merging(filenames):
     

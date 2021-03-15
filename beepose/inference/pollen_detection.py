@@ -12,8 +12,8 @@ import cv2
 from keras.models import load_model
 import argparse
 import math
-from beeid.body import Body
-from beeid.video import Video
+from plotbee.body import Body
+from plotbee.video import Video
 from tqdm import tqdm
 
 FPS = 20.0
