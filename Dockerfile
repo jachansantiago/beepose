@@ -15,7 +15,7 @@ WORKDIR /home/beepose
 
 ENV PATH /opt/conda/bin:$PATH
 
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O ~/miniconda.sh && \
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     sudo /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
     sudo /opt/conda/bin/conda clean -tipsy && \
@@ -38,9 +38,10 @@ RUN sudo apt-get update && sudo apt install -y libgl1-mesa-glx libsm6 libxext6 l
 
 COPY beepose.yml /home/beepose/beepose.yml
 
-RUN cd /home/beepose/ && conda env create -f beepose.yml && echo "conda activate beepose && cd beepose && pip install -e beeid && python setup.py develop" >> ~/.bashrc
+RUN cd /home/beepose/ && conda env create -f beepose.yml
+RUN echo "conda activate beepose && cd beepose && pip install -r plotbee/requirements.txt && pip install -e plotbee && python setup.py develop" >> ~/.bashrc
 ENV PATH /opt/conda/envs/beepose/bin:$PATH
-RUN echo $PATH
+# RUN echo $PATH
 # TODO: install python setup.py in beepose
 #RUN /bin/bash -c "source ~/.bashrc && conda activate beepose && cd /home/beepose/ && python setup.py install"
 #RUN cd /home/beepose/ && python setup.py install

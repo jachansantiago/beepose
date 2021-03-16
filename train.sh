@@ -1,0 +1,1 @@
+train_stages_aug --stages 6 --folder new_weights/ --gpu 0 --gpu_fraction 0.9 --ann data/raw/bee/dataset_raw/train_bee_annotations2018.json --imgs data/raw/bee/dataset_raw/train --val_imgs data/raw/bee/dataset_raw/validation --val_ann data/raw/bee/dataset_raw/validation.json --batch_size 10 --max_iter 20000
