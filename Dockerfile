@@ -37,7 +37,7 @@ RUN sudo apt-get update && sudo apt install -y libgl1-mesa-glx libsm6 libxext6 l
 
 
 COPY beepose.yml /home/beepose/beepose.yml
-
+# This line is for development
 RUN cd /home/beepose/ && conda env create -f beepose.yml
 RUN echo "conda activate beepose && cd beepose && pip install -r plotbee/requirements.txt && pip install -e plotbee && python setup.py develop" >> ~/.bashrc
 ENV PATH /opt/conda/envs/beepose/bin:$PATH

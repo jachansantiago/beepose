@@ -20,7 +20,7 @@ To build the image you should run:
 docker build -t <IMAGE_NAME> .
 `
 
-And for run the container you need to run
+Or use `build_docker.sh`. And for run the container you need to run
 
 `
 docker run --gpus all -it <IMAGE_NAME> /bin/bash
