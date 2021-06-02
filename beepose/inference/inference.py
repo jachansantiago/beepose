@@ -311,13 +311,16 @@ def inference(input_image,model, params, model_params,show=False,np1=19,np2=38,r
 
                 # if find no partA in the subset, create a new subset
                 elif not found and k < numparts:
-                    row = -1 * np.ones(len(candidate)+1)
-                    row[indexA] = partAs[i]
-                    row[indexB] = partBs[i]
-                    row[-1] = 2
-                    row[-2] = sum(candidate[connection_all[k][i, :2].astype(int), 2]) + \
+                    try:
+                        row = -1 * np.ones(len(candidate)+1)
+                        row[indexA] = partAs[i]
+                        row[indexB] = partBs[i]
+                        row[-1] = 2
+                        row[-2] = sum(candidate[connection_all[k][i, :2].astype(int), 2]) + \
                               connection_all[k][i][2]
-                    subset = np.vstack([subset, row])
+                        subset = np.vstack([subset, row])
+                    except:
+                        continue
     toc_pafscore=time.time()
     logger.debug('Paf scoring frame time is %.5f' % (toc_pafscore - tic_pafscore))
     # delete some rows of subset which has few parts occur
@@ -341,8 +344,13 @@ def inference(input_image,model, params, model_params,show=False,np1=19,np2=38,r
     for i in range(len(limbSeq)):#17
         for n in range(len(subset)):
             kind=limbSeq[i]
+            if (kind[0] - 1) >= len(subset[n]) or (kind[1] - 1) >= len(subset[n]):
+                continue
             index = subset[n][np.array(kind) - 1]
             if -1 in index:
+                continue
+            ia, ib = index.astype(int)
+            if ia >= len(candidate) or ib >= len(candidate):
                 continue
             Y = candidate[index.astype(int), 0]
             X = candidate[index.astype(int), 1]
@@ -372,8 +380,15 @@ def inference(input_image,model, params, model_params,show=False,np1=19,np2=38,r
 
         for i in range(len(limbSeq)):#17
             for n in range(len(subset)):
-                index = subset[n][np.array(limbSeq[i]) - 1]
+                kind = limbSeq[i]
+                if (kind[0] - 1) >= len(subset[n]) or (kind[1] - 1) >= len(subset[n]):
+                    continue
+            
+                index = subset[n][np.array(kind) - 1]
                 if -1 in index:
+                    continue
+                ia, ib = index.astype(int)
+                if ia >= len(candidate) or ib >= len(candidate):
                     continue
                 cur_canvas = canvas.copy()
                 Y = candidate[index.astype(int), 0]

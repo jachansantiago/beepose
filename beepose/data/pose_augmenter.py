@@ -155,6 +155,7 @@ def get_augmented_image(meta):
     # TODO: Center on the bees thorax. 
     
     thoraxes = [ p[2] for p in meta.joint_list if p[2][0]>300 and p[2][0]<2200 and p[2][1]>100 and p[2][1]< 1200]
+    thoraxes = [ p[2] for p in meta.joint_list]
     #print(meta.height,meta.width)
     params = random_tform_params((meta.height,meta.width),thoraxes, output_shape=meta.output_shape,mina=meta.mina,maxa=meta.maxa,mins=meta.mins,maxs=meta.maxs)
     
