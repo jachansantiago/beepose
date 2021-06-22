@@ -6,7 +6,10 @@ beepose
 
 
 Welcome to beepose the repo to perform multiple animal pose estimation and tracking. 
-
+### Installation
+`
+git clone --recurse-submodules https://github.com/jachansantiago/beepose.git
+`
 ### Docker
 
 #### Dependecies
