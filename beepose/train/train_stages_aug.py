@@ -232,16 +232,24 @@ def training_main(args):
               'stepsize':68053
                }
     
+    print("==================================")
     print(gpu)
-    
-    
-    config = tf.ConfigProto()
+    gpu_options = tf.GPUOptions()
     if gpu != 'all':
-        config.gpu_options.visible_device_list= "%d"%int(gpu)
-        os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-        os.environ["CUDA_VISIBLE_DEVICES"]="%d"%int(gpu)
-    config.gpu_options.per_process_gpu_memory_fraction = fraction
+        # os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+        # os.environ["CUDA_VISIBLE_DEVICES"]="%d"%int(gpu)
+        
+        # physical_devices = tf.config.experimental.list_physical_devices('GPU')
+        # print(physical_devices, gpu)
+        # tf.config.experimental.set_visible_devices(physical_devices[int(gpu)], 'GPU')
+        # tf.config.experimental.set_memory_growth(physical_devices[int(gpu)], True)
+        # tf.config.experimental.set_virtual_device_configuration(physical_devices[int(gpu)], [tf.config.experimental.VirtualDeviceConfiguration()])
+        gpu_options = tf.GPUOptions(allow_growth=True, visible_device_list="{}".format(gpu))
+    
+    
+    config = tf.ConfigProto(gpu_options=gpu_options)
     session = tf.Session(config=config)
+    K.set_session(session)
     
     # Prepare generator
   

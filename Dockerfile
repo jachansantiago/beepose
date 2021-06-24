@@ -47,5 +47,5 @@ RUN python setup.py install
 # RUN echo $PATH
 
 # RUN /bin/bash -c "conda init bash"
-ENTRYPOINT ["./scripts/beepose"]
+ENTRYPOINT ["beepose"]
 CMD ["-h"]
