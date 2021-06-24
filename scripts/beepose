@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+import argparse
+import os
+from beepose.train.train_stages_aug import training_main
+from beepose.inference.process_folder_full_video import inference_main
+
+
+
+
+# create the top-level parser
+parser = argparse.ArgumentParser()
+parser.set_defaults(func=None)
+subparsers = parser.add_subparsers()
+
+# create the parser for the "skeleton" command
+training_parser = subparsers.add_parser('train')
+training_parser.add_argument('--stages', type=int, default =2, help='number of stages')
+training_parser.add_argument('--folder',type=str,default="weights_logs/5p_6/",help='"Where to save this training"' )
+training_parser.add_argument('--gpu',default =1, help= 'what gpu to use, if "all" try to allocate on every gpu'  )
+training_parser.add_argument('--gpu_fraction', type=float, default =0.9, help= 'how much memory of the gpu to use' )
+training_parser.add_argument('--ann', type=str,default = '../../data/raw/bee/dataset_raw/train_bee_annotations2018.json' ,help =' Path to annotations')
+training_parser.add_argument('--imgs',type=str, default = '../../data/raw/bee/dataset_raw/train',help='Path to images folder')
+training_parser.add_argument('--val_imgs',type=str,default='../../data/raw/bee/dataset_raw/validation',help= 'path to val images folder')
+training_parser.add_argument('--val_ann',type=str,default='../../data/raw/bee/dataset_raw/validation.json',help= 'path to val images folder')
+training_parser.add_argument('--batch_size', type=int, default =10, help= 'batch_size' )
+training_parser.add_argument('--max_iter', type=int,default=20000, help='Number of epochs to run ')
+training_parser.set_defaults(func=training_main)
+
+# create the parser for the "inference" command
+inference_parser = subparsers.add_parser('inference')
+inference_parser.add_argument('--videos_path', type=str, help='input folder path where the videos are')
+inference_parser.add_argument('--GPU',default=[0], nargs='+', help="GPU number for the device. If you want to use more than one, separate by commas like 0,1,2 etc")
+inference_parser.add_argument('--GPU_mem',type = float, default=12, help='Memory available')
+inference_parser.add_argument('--model_day', default='../../models/pose/complete_5p_2.best_day.h5', type=str, help='path to day model')
+inference_parser.add_argument('--model_nigth', default='../../models/pose/complete_5p_2.best_night.h5', type=str, help='path to night model')
+inference_parser.add_argument('--model_pollen', default='../../models/pollen/complete_pollen.h5', type=str, help='path to night model')
+inference_parser.add_argument('--output_folder', default='output',type=str)
+inference_parser.add_argument('--sufix', type=str, default= 'detections', help='Sufix to identify the detection ')
+inference_parser.add_argument('--tracking',type=str, default= 'hungarian', choices= ['hungarian','kalman','both'])
+inference_parser.add_argument('--model_config', default='../../models/pose/complete_5p_2_model_params.json', type=str, help="Model config json file")
+inference_parser.add_argument('--part',type=int,default=2, help='Index id of Part to be tracked')
+inference_parser.add_argument('--process_pollen', default=False, action="store_true", help='Whether to apply pollen detection separately. Default is True')
+inference_parser.add_argument('--event_detection', default=False, action="store_true", help='Whether to apply event detection. Default is True')
+inference_parser.add_argument('--debug',type=bool,default=False,help='If debug is True logging will include profiling and other details')
+inference_parser.set_defaults(func=inference_main)
+
+
+#parse the args and call whatever function was selected
+args = parser.parse_args()
+if args.func == None:
+    parser.parse_args(['-h'])
+else:
+    args.func(args)
