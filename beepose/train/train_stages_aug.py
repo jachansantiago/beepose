@@ -192,24 +192,7 @@ def setup_lr_multipliers(model):
     return lr_mult
     
 
-def main():   
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--stages', type=int, default =6, help='number of stages')
-    
-    parser.add_argument('--folder',type=str,default="weights_logs/5p_6/",help='"Where to save this training"' )
-    parser.add_argument('--gpu',default =1, help= 'what gpu to use, if "all" try to allocate on every gpu'  )
-    parser.add_argument('--gpu_fraction', type=float, default =0.9, help= 'how much memory of the gpu to use' )
-#     parser.add_argument('--np1', type=int, default =12, help= 'Number of pafs' )
-#     parser.add_argument('--np2', type=int, default =6, help= 'number of heatmaps' )
-    parser.add_argument('--ann', type=str,default = '../../data/raw/bee/dataset_raw/train_bee_annotations2018.json' ,help =' Path to annotations')
-    parser.add_argument('--imgs',type=str, default = '../../data/raw/bee/dataset_raw/train',help='Path to images folder')
-    parser.add_argument('--val_imgs',type=str,default='../../data/raw/bee/dataset_raw/validation',help= 'path to val images folder')
-    parser.add_argument('--val_ann',type=str,default='../../data/raw/bee/dataset_raw/validation.json',help= 'path to val images folder')
-    parser.add_argument('--batch_size', type=int, default =10, help= 'batch_size' )
-    parser.add_argument('--max_iter', type=int,default=20000, help='Number of epochs to run ')
-    
-    
-    args = parser.parse_args()
+def training_main(args):   
     folder = args.folder
     stages=int(args.stages)
     val_imgs_path = str(args.val_imgs)
@@ -337,4 +320,21 @@ def main():
     save_inference_model(stages,np1,np2,WEIGHTS_BEST,OUTPUT_PATH)
     
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--stages', type=int, default =6, help='number of stages')
+    
+    parser.add_argument('--folder',type=str,default="weights_logs/5p_6/",help='"Where to save this training"' )
+    parser.add_argument('--gpu',default =1, help= 'what gpu to use, if "all" try to allocate on every gpu'  )
+    parser.add_argument('--gpu_fraction', type=float, default =0.9, help= 'how much memory of the gpu to use' )
+#     parser.add_argument('--np1', type=int, default =12, help= 'Number of pafs' )
+#     parser.add_argument('--np2', type=int, default =6, help= 'number of heatmaps' )
+    parser.add_argument('--ann', type=str,default = '../../data/raw/bee/dataset_raw/train_bee_annotations2018.json' ,help =' Path to annotations')
+    parser.add_argument('--imgs',type=str, default = '../../data/raw/bee/dataset_raw/train',help='Path to images folder')
+    parser.add_argument('--val_imgs',type=str,default='../../data/raw/bee/dataset_raw/validation',help= 'path to val images folder')
+    parser.add_argument('--val_ann',type=str,default='../../data/raw/bee/dataset_raw/validation.json',help= 'path to val images folder')
+    parser.add_argument('--batch_size', type=int, default =10, help= 'batch_size' )
+    parser.add_argument('--max_iter', type=int,default=20000, help='Number of epochs to run ')
+    
+    
+    args = parser.parse_args()
+    training_main(args)

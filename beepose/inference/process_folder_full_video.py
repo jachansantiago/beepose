@@ -55,16 +55,16 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
     print(fraction)
     np1=np1
     np2=np2
-    if output_folder == 'output':
-        output_folder = os.path.join(videos_path,'OUTPUT')
+#     if output_folder == 'output':
+#         output_folder = os.path.join(videos_path,'OUTPUT')
         
     os.makedirs(output_folder,exist_ok=True)
     # Creating a folder to move a video once has been processed
-    videos_processed = os.path.join(videos_path,'processed')
-    os.makedirs(videos_processed,exist_ok=True)
+#     videos_processed = os.path.join(videos_path,'processed')
+#     os.makedirs(videos_processed,exist_ok=True)
     # creating a folder to put all the processed files
-    recicle_folder = os.path.join(output_folder,'recicle')
-    os.makedirs(recicle_folder,exist_ok=True)
+#     recicle_folder = os.path.join(output_folder,'recicle')
+#     os.makedirs(recicle_folder,exist_ok=True)
     
     files_videos = glob.glob(os.path.join(videos_path,'*.mp4'))
     
@@ -496,31 +496,11 @@ def process_full_videos_by_batch(videos_path,model_day,model_nigth,model_pollen,
     
         
         
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--videos_path', type=str, help='input folder path where the videos are')
-    parser.add_argument('--GPU',default=[0], nargs='+', help="GPU number for the device. If you want to use more than one, separate by commas like 0,1,2 etc")
-    parser.add_argument('--GPU_mem',type = float, default=12, help='Memory available')
-    parser.add_argument('--model_day', default='../../models/pose/complete_5p_2.best_day.h5', type=str, help='path to day model')
-    parser.add_argument('--model_nigth', default='../../models/pose/complete_5p_2.best_night.h5', type=str, help='path to night model')
-    parser.add_argument('--model_pollen', default='../../models/pollen/complete_pollen.h5', type=str, help='path to night model')
-    parser.add_argument('--output_folder', default='output',type=str)
-    # TODO_FIX THIS PARSER. FOR NOW JUST HARDCODED. 
-    #parser.add_argument('--limb_conf',type=list,default=[[1,3],[3,2],[2,4],[2,5],[1,2]] )
-    #parser.add_argument('--paf_conf',type=list,default=[[0,1],[2,3],[4,5],[6,7],[8,9]] )
-    parser.add_argument('--sufix', type=str, default= 'detections', help='Sufix to identify the detection ')
-    parser.add_argument('--tracking',type=str, default= 'hungarian', choices= ['hungarian','kalman','both'])
-#     parser.add_argument('--np1',type=int,default=12, help = 'number of channels for pafs')
-#     parser.add_argument('--np2',type=int,default=6, help= 'number of channels for heatmaps')
-#     parser.add_argument('--numparts',type=int,default=5, help='number of parts to process')
-    parser.add_argument('--model_config', default='../../models/pose/complete_5p_2_model_params.json', type=str, help="Model config json file")
-    parser.add_argument('--part',type=int,default=2, help='Index id of Part to be tracked')
-    parser.add_argument('--process_pollen', default=False, action="store_true", help='Whether to apply pollen detection separately. Default is True')
-    parser.add_argument('--event_detection', default=False, action="store_true", help='Whether to apply event detection. Default is True')
-    parser.add_argument('--debug',type=bool,default=False,help='If debug is True logging will include profiling and other details')
+def inference_main(args):
+    
     SIZEMODEL = 4 # Usually I used up to 4.5 GB per model to avoid memory problem when running.
     
-    args = parser.parse_args()
+    
      
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -563,10 +543,32 @@ def main():
     part = str(args.part)
     process_pollen = args.process_pollen
     event_detection = args.event_detection
+    process_full_videos(videos_path, model_day, model_nigth, model_pollen,
+                        output_folder, sufix, limbSeq, mapIdx, number_models_per_gpu,
+                        GPU, GPU_mem, tracking=tracking, np1=np1, np2=np2,
+                        event_detection=event_detection, process_pollen=process_pollen,
+                        numparts=numparts)
     
     # Slower than I thought. It may be improved. But need to parellize
     #process_full_videos_by_batch(videos_path,model_day,model_nigth,model_pollen,output_folder,sufix,limbSeq,mapIdx,number_models,GPU,GPU_mem,tracking=tracking,np1=np1,np2=np2)
-    process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_folder,sufix,limbSeq,mapIdx,number_models_per_gpu,GPU,GPU_mem,tracking=tracking,np1=np1,np2=np2,event_detection=event_detection,process_pollen=process_pollen,numparts=numparts)
+    
     
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--videos_path', type=str, help='input folder path where the videos are')
+    parser.add_argument('--GPU',default=[0], nargs='+', help="GPU number for the device. If you want to use more than one, separate by commas like 0,1,2 etc")
+    parser.add_argument('--GPU_mem',type = float, default=12, help='Memory available')
+    parser.add_argument('--model_day', default='../../models/pose/complete_5p_2.best_day.h5', type=str, help='path to day model')
+    parser.add_argument('--model_nigth', default='../../models/pose/complete_5p_2.best_night.h5', type=str, help='path to night model')
+    parser.add_argument('--model_pollen', default='../../models/pollen/complete_pollen.h5', type=str, help='path to night model')
+    parser.add_argument('--output_folder', default='output',type=str)
+    parser.add_argument('--sufix', type=str, default= 'detections', help='Sufix to identify the detection ')
+    parser.add_argument('--tracking',type=str, default=None, choices= ['hungarian','kalman','both'])
+    parser.add_argument('--model_config', default='../../models/pose/complete_5p_2_model_params.json', type=str, help="Model config json file")
+    parser.add_argument('--part',type=int,default=2, help='Index id of Part to be tracked')
+    parser.add_argument('--process_pollen', default=False, action="store_true", help='Whether to apply pollen detection separately. Default is True')
+    parser.add_argument('--event_detection', default=False, action="store_true", help='Whether to apply event detection. Default is True')
+    parser.add_argument('--debug',type=bool,default=False,help='If debug is True logging will include profiling and other details')
+    
+    args = parser.parse_args()
+    inference_main(args)
