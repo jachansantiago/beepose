@@ -76,6 +76,9 @@ def get_mounts(args_dict, options, docker_folder):
     
     for option in options:
         host_path = args_dict[option]
+        if host_path == None:
+            continue
+        host_path = Path(host_path).resolve()
         docker_path = get_docker_path(host_path, docker_folder)
 
         mount = get_mount(host_path, docker_path)
@@ -89,6 +92,12 @@ def update_beepose_args(args_dict, options, docker_folder):
     
     for option in options:
         host_path = args_dict[option]
+
+        # Avoid duplicate of --mounts 
+        # if the train and val images came from the same folder
+        if option == "val_imgs" and host_path == None:
+            host_path = args_dict["imgs"]
+
         docker_path = get_docker_path(host_path, docker_folder)
         beepose_args[option] = docker_path
 
@@ -97,19 +106,20 @@ def update_beepose_args(args_dict, options, docker_folder):
 
 def launch_training(args):
     args_dict = vars(args)
+    args_dict["folder"] = absolute_path(args_dict["folder"])
     training_data_mounts = get_mounts(args_dict, TRAINING_DATA_OPTIONS, "/training_data")
     training_output_mounts = get_mounts(args_dict, TRAINING_OUTPUT_OPTIONS, "/training_model")
     
     mounts = training_data_mounts + training_output_mounts
     
     mounts_opt = ["--bind", ",".join(mounts)]
-    print(mounts_opt)
+    # print(mounts_opt)
     
     # update beepose args path inside the docker container
     beepose_args = update_beepose_args(args_dict, TRAINING_DATA_OPTIONS, "/training_data")
     beepose_args = update_beepose_args(beepose_args, TRAINING_OUTPUT_OPTIONS, "/training_model")
 
-    cmd = ["singularity", "run", "--nv", "-c"]
+    cmd = ["singularity", "run", "--nv"]
     cmd += mounts_opt
     cmd += [BEEPOSE_IMAGE, "train"]
     cmd += beepose_args_options(beepose_args)
@@ -126,18 +136,18 @@ def launch_inference(args):
     
     mounts = inference_data_mounts + inference_model_mounts + inference_output_mounts
     mounts_opt = ["--bind", ",".join(mounts)]
-    print(mounts_opt)
+    # print(mounts_opt)
 
     beepose_args = update_beepose_args(args_dict, INFERENCE_DATA_OPTIONS, "/inference_data")
     beepose_args = update_beepose_args(beepose_args, INFERENCE_MODEL_OPTIONS , "/inference_model")
     beepose_args = update_beepose_args(beepose_args, INFERENCE_OUTPUT_OPTIONS , "/inference_output")
     beepose_args["videos_path"], _ = os.path.split(beepose_args["videos_path"])
 
-    cmd = ["singularity", "run", "--nv", "-c"]
+    cmd = ["singularity", "run", "--nv"]
     cmd += mounts_opt
     cmd += [BEEPOSE_IMAGE, "inference"]
     cmd += beepose_args_options(beepose_args)
-    print(cmd)
+    # print(cmd)
     execute_job(cmd)
 
 
@@ -155,8 +165,8 @@ training_parser.add_argument('--gpu',default =1, help= 'what gpu to use, if "all
 training_parser.add_argument('--gpu_fraction', type=float, default =0.9, help= 'how much memory of the gpu to use' )
 training_parser.add_argument('--ann', type=str,default = '../../data/raw/bee/dataset_raw/train_bee_annotations2018.json' ,help =' Path to annotations')
 training_parser.add_argument('--imgs',type=str, default = '../../data/raw/bee/dataset_raw/train',help='Path to images folder')
-training_parser.add_argument('--val_imgs',type=str,default='../../data/raw/bee/dataset_raw/validation',help= 'path to val images folder')
-training_parser.add_argument('--val_ann',type=str,default='../../data/raw/bee/dataset_raw/validation.json',help= 'path to val images folder')
+training_parser.add_argument('--val_imgs',type=str,default=None, help= 'path to val images folder')
+training_parser.add_argument('--val_ann',type=str,default=None, help= 'path to val images folder')
 training_parser.add_argument('--batch_size', type=int, default =10, help= 'batch_size' )
 training_parser.add_argument('--max_iter', type=int,default=20000, help='Number of epochs to run ')
 training_parser.set_defaults(command="train")
