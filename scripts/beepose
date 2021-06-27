@@ -36,7 +36,7 @@ inference_parser.add_argument('--model_nigth', default='../../models/pose/comple
 inference_parser.add_argument('--model_pollen', default='../../models/pollen/complete_pollen.h5', type=str, help='path to night model')
 inference_parser.add_argument('--output_folder', default='output',type=str)
 inference_parser.add_argument('--sufix', type=str, default= 'detections', help='Sufix to identify the detection ')
-inference_parser.add_argument('--tracking',type=str, default= 'hungarian', choices= ['hungarian','kalman','both'])
+inference_parser.add_argument('--tracking',type=str, default=None , choices= ['hungarian','kalman','both'])
 inference_parser.add_argument('--model_config', default='../../models/pose/complete_5p_2_model_params.json', type=str, help="Model config json file")
 inference_parser.add_argument('--part',type=int,default=2, help='Index id of Part to be tracked')
 inference_parser.add_argument('--process_pollen', default=False, action="store_true", help='Whether to apply pollen detection separately. Default is True')
