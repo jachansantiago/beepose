@@ -14,6 +14,7 @@ from tqdm import tqdm
 from dask import delayed,compute
 import logging
 import time
+import keras.backend as K
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +42,25 @@ def process_video_fragment(file,model_file_day,gpu,gpu_fraction,start_frame,end_
     """
     print('arguments:')
    
-    if type(gpu)==int:
-        os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-        os.environ["CUDA_VISIBLE_DEVICES"]="%d"%gpu
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+    print("{}".format(gpu))
+#     os.environ["CUDA_VISIBLE_DEVICES"]="%d"%gpu
+    K.clear_session()
+    physical_devices = tf.config.experimental.list_physical_devices('GPU')
+    tf.config.experimental.set_visible_devices(physical_devices[gpu], 'GPU')
+
+    gpu_options = tf.compat.v1.GPUOptions()
+    gpu_options = tf.compat.v1.GPUOptions(allow_growth=True, per_process_gpu_memory_fraction=gpu_fraction, visible_device_list="{}".format(gpu))
+    
+    config = tf.compat.v1.ConfigProto(gpu_options=gpu_options)
+    session = tf.compat.v1.Session(config=config)
+    K.set_session(session)
         
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
-    session = tf.Session(config=config)
+#     config = tf.ConfigProto()
+#     config.gpu_options.allow_growth = True
+#     config.gpu_options.per_process_gpu_memory_fraction = gpu_fraction
+#     session = tf.Session(config=config)
     
     model = load_model(model_file_day,compile=False)
     # Adding different threshold for different detection task. For pollen (5,6: 0.09). For tag (0.01)

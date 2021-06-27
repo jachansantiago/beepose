@@ -174,7 +174,7 @@ training_parser.set_defaults(command="train")
 # create the parser for the "inference" command
 inference_parser = subparsers.add_parser('inference')
 inference_parser.add_argument('--videos_path', type=str, help='input folder path where the videos are')
-inference_parser.add_argument('--GPU',default=[0], nargs='+', help="GPU number for the device. If you want to use more than one, separate by commas like 0,1,2 etc")
+inference_parser.add_argument('--GPU',default=[], nargs='*', help="GPU number for the device. If you want to use more than one, separate by commas like 0,1,2 etc")
 inference_parser.add_argument('--GPU_mem',type = float, default=12, help='Memory available')
 inference_parser.add_argument('--model_day', default='../../models/pose/complete_5p_2.best_day.h5', type=str, help='path to day model')
 inference_parser.add_argument('--output_folder', default="output",type=str)

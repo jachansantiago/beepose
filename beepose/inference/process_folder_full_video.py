@@ -14,11 +14,13 @@ from plotbee.video import Video
 import time 
 import logging
 import json
+import GPUtil
+# import tensorflow as tf
 
 
 
 
-def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_folder,sufix,limbSeq,mapIdx,number_models,GPU,GPU_mem,tracking='hungarian',np1=12,np2=6,event_detection=True,process_pollen=True,numparts=5,part='2'):
+def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_folder,sufix,limbSeq,mapIdx,number_models_per_gpu,GPU,GPU_mem_per_gpu,tracking='hungarian',np1=12,np2=6,event_detection=True,process_pollen=True,numparts=5,part='2'):
     
     """
     This Function takes as input  a folder of videos to process. Then takes each of the videos and creates as many subprocesses as possible in order to allocate the maximum possible in the GPU and process the video faster. 
@@ -47,12 +49,12 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
     print('                              INFERENCE START                                 ')
     print('==============================================================================')
     
-    print('Allocating %d Models'%len(GPU)*number_models)
-    fraction = 1.0/number_models
-    if GPU == 'all':
-        fraction = 2.0/number_models
+    print('Allocating %d Models'%len(GPU)*number_models_per_gpu)
+    fraction_per_gpu = 1.0/number_models_per_gpu
+#     if GPU == 'all':
+#         fraction = 2.0/number_models
     
-    print(fraction)
+    print(fraction_per_gpu)
     np1=np1
     np2=np2
 #     if output_folder == 'output':
@@ -103,21 +105,23 @@ def process_full_videos(videos_path,model_day,model_nigth,model_pollen,output_fo
             video = cv2.VideoCapture(file)
             num_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
             print('Video size in frames %d'%num_frames)
-            fragment_size = num_frames//(len(GPU)*number_models)
+            fragment_size = num_frames//(len(GPU)*number_models_per_gpu)
             processes={}
             print('Initializing multiprocessing') 
             filenames = []
             model_num=0
             for G in GPU:
-                for i  in range(number_models):
+                for i  in range(number_models_per_gpu):
                     start = int(model_num*fragment_size)
                     end = int(start+fragment_size)
-                    if model_num == (len(GPU)*number_models)-1:
+                    if model_num == (len(GPU)*number_models_per_gpu)-1:
                         end = int(num_frames)
                     output_name = os.path.join(output_folder,'%d'%(model_num+1)+file.split('/')[-1][:-4]+'_%s.json'%sufix)
                     filenames.append(output_name)
-                    processes[model_num] = mp.Process(target=process_video_fragment,args=(file,model_day,G,fraction,start,end,limbSeq,mapIdx,np1,np2,output_name,numparts,int(fragment_size/2)))
-                    print('starting process%d'%model_num,'File:%s, start:%d, end: %d, gpu:%s, fraction%d'%(file,start,end,str(G),fraction))
+                    env = os.environ.copy()
+                    env["CUDA_VISIBLE_DEVICES"] = "{}".format(G)
+                    processes[model_num] = mp.Process(target=process_video_fragment,args=(file,model_day,G,fraction_per_gpu,start,end,limbSeq,mapIdx,np1,np2,output_name,numparts,int(fragment_size/2)))
+                    print('starting process%d'%model_num,'File:%s, start:%d, end: %d, gpu:%s, fraction%d'%(file,start,end,str(G),fraction_per_gpu))
                     
                     processes[model_num].start()
                     model_num+=1
@@ -506,22 +510,27 @@ def inference_main(args):
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
-      
-
-    
+       
     print(args)
-    try:
-        GPU = [int(g) for g in args.GPU]
-    except:
-        GPU = args.GPU
+    gpus = GPUtil.getGPUs()
+    
+    GPU_mem_per_gpu = gpus[0].memoryTotal//1000
+    GPU = args.GPU
+
+    if not GPU:
+        gpus = GPUtil.getGPUs()
+#         gpus = tf.config.experimental.list_physical_devices('GPU')
+#         gpus = ["0", "1"]
+        GPU = [int(gpu.id) for gpu in gpus]
+        print("===================================")
+        print(GPU)
+    else:
+        GPU = [int(g) for g in GPU]
         
-    GPU_mem = args.GPU_mem
-    if GPU=='all':
-        GPU_mem +=GPU_mem
     
     videos_path = args.videos_path
     output_folder = args.output_folder
-    number_models_per_gpu = int(GPU_mem//SIZEMODEL) - 1
+    number_models_per_gpu = int(GPU_mem_per_gpu//SIZEMODEL) - 1
     # print(number_models)
     model_day = args.model_day
     model_nigth = args.model_nigth
@@ -545,7 +554,7 @@ def inference_main(args):
     event_detection = args.event_detection
     process_full_videos(videos_path, model_day, model_nigth, model_pollen,
                         output_folder, sufix, limbSeq, mapIdx, number_models_per_gpu,
-                        GPU, GPU_mem, tracking=tracking, np1=np1, np2=np2,
+                        GPU, GPU_mem_per_gpu, tracking=tracking, np1=np1, np2=np2,
                         event_detection=event_detection, process_pollen=process_pollen,
                         numparts=numparts)
     
@@ -556,7 +565,7 @@ def inference_main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--videos_path', type=str, help='input folder path where the videos are')
-    parser.add_argument('--GPU',default=[0], nargs='+', help="GPU number for the device. If you want to use more than one, separate by commas like 0,1,2 etc")
+    parser.add_argument('--GPU',default=[], nargs='*', help="GPU number for the device. If you want to use more than one, separate by commas like 0,1,2 etc")
     parser.add_argument('--GPU_mem',type = float, default=12, help='Memory available')
     parser.add_argument('--model_day', default='../../models/pose/complete_5p_2.best_day.h5', type=str, help='path to day model')
     parser.add_argument('--model_nigth', default='../../models/pose/complete_5p_2.best_night.h5', type=str, help='path to night model')
