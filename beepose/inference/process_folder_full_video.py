@@ -502,7 +502,7 @@ def process_full_videos_by_batch(videos_path,model_day,model_nigth,model_pollen,
         
 def inference_main(args):
     
-    SIZEMODEL = 4 # Usually I used up to 4.5 GB per model to avoid memory problem when running.
+    SIZEMODEL = 5 # Usually I used up to 4.5 GB per model to avoid memory problem when running.
     
     
      

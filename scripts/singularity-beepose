@@ -143,7 +143,7 @@ def launch_inference(args):
     beepose_args = update_beepose_args(beepose_args, INFERENCE_OUTPUT_OPTIONS , "/inference_output")
     beepose_args["videos_path"], _ = os.path.split(beepose_args["videos_path"])
 
-    cmd = ["singularity", "run", "--nv"]
+    cmd = ["singularity", "run", "--nv", "-c"]
     cmd += mounts_opt
     cmd += [BEEPOSE_IMAGE, "inference"]
     cmd += beepose_args_options(beepose_args)
