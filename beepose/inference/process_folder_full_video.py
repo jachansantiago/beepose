@@ -1,4 +1,6 @@
-import sys 
+import sys
+
+# from distributed import worker 
 sys.path.append('..')
 import argparse
 import os, sys,glob,shutil
@@ -516,6 +518,7 @@ def inference_main(args):
     
     GPU_mem_per_gpu = gpus[0].memoryTotal//1000
     GPU = args.GPU
+    workers = args.workers
 
     if not GPU:
         gpus = GPUtil.getGPUs()
@@ -530,7 +533,10 @@ def inference_main(args):
     
     videos_path = args.videos_path
     output_folder = args.output_folder
-    number_models_per_gpu = int(GPU_mem_per_gpu//SIZEMODEL) - 1
+    if workers == -1:
+        number_models_per_gpu = int(GPU_mem_per_gpu//SIZEMODEL)
+    else:
+        number_models_per_gpu = workers
     # print(number_models)
     model_day = args.model_day
     model_nigth = args.model_nigth
@@ -577,7 +583,8 @@ if __name__ == '__main__':
     parser.add_argument('--part',type=int,default=2, help='Index id of Part to be tracked')
     parser.add_argument('--process_pollen', default=False, action="store_true", help='Whether to apply pollen detection separately. Default is True')
     parser.add_argument('--event_detection', default=False, action="store_true", help='Whether to apply event detection. Default is True')
-    parser.add_argument('--debug',type=bool,default=False,help='If debug is True logging will include profiling and other details')
+    parser.add_argument('--debug',action='store_true',help='If debug is True logging will include profiling and other details')
+    parser.add_argument('--workers',type=int,default=-1, help='Worker per GPU')
     
     args = parser.parse_args()
     inference_main(args)

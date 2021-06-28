@@ -57,8 +57,14 @@ def beepose_args_options(beepose_args):
         if key == "command" or key == "image":
             continue
         options.append("--{}".format(key))
-        if key == "GPU":
+        if key == "GPU" and value == []:
+            continue
+        elif key == "GPU":
             options.append(" ".join(value))
+        elif key == "debug" and value:
+            options.append("--debug")
+        elif key == "debug":
+            continue
         else:
             options.append("{}".format(value))
     return options
@@ -179,6 +185,8 @@ inference_parser.add_argument('--GPU_mem',type = float, default=12, help='Memory
 inference_parser.add_argument('--model_day', default='../../models/pose/complete_5p_2.best_day.h5', type=str, help='path to day model')
 inference_parser.add_argument('--output_folder', default="output",type=str)
 inference_parser.add_argument('--model_config', default='../../models/pose/complete_5p_2_model_params.json', type=str, help="Model config json file")
+inference_parser.add_argument('--debug',action='store_true',help='If debug is True logging will include profiling and other details')
+inference_parser.add_argument('--workers',type=int,default=-1, help='Worker per GPU')
 inference_parser.set_defaults(command="inference")
 
 

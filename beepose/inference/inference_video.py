@@ -97,24 +97,33 @@ def process_video_fragment(file,model_file_day,gpu,gpu_fraction,start_frame,end_
     print('fragment', start_frame,end_frame)
     for idx in tqdm(range(start_frame,end_frame),ascii=True,desc='[%d,%d]--%s'%(start_frame,end_frame,file.split('/')[-1])):
         #print(idx)
+        load_start = time.time()
         t,im = video.read()
+        load_end = time.time()
+        logger.debug('Frame load time is %.5f' % (load_end - load_start))
         if t==False:
             print('Error reading frame ',idx)
             continue
-        tic = time.time()
         # generate image with body parts
         #params, model_params = config_reader()
+        resize_start = time.time()
         input_image =cv2.resize(im,(im.shape[1]//resize_factor,im.shape[0]//resize_factor))
+        resize_end = time.time()
+        logger.debug('Frame resize time is %.5f' % (resize_end - resize_start))
         frame+=1
+        inference_start = time.time()
         canvas,mappings,parts = inference(input_image, model,params,model_params,show=show,np1=np2,np2=np1,
                                                     resize=resize_factor,limbSeq=limbSeq,mapIdx=mapIdx,numparts=numparts,image_type="BGR")
+        inference_end = time.time()
+        logger.debug('Inference time is %.5f' % (inference_end - inference_start))
         #print(mappings)
+        save_start = time.time()
         frame_detections[idx]={}
         frame_detections[idx]['mapping']=mappings
         frame_detections[idx]['parts']=parts
-        
-        toc = time.time()
-        logger.debug('Frame processing time is %.5f' % (toc - tic))
+        save_end = time.time()
+        logger.debug('Saving time is %.5f' % (save_end - save_start))
+        logger.debug('Total step time is %.5f' % (save_end - load_start))
         #print ('Frame processing time is %.5f' % (toc - tic))
         if frame%100==0:
             print('writing image', frame)

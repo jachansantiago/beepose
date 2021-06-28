@@ -41,7 +41,8 @@ inference_parser.add_argument('--model_config', default='../../models/pose/compl
 inference_parser.add_argument('--part',type=int,default=2, help='Index id of Part to be tracked')
 inference_parser.add_argument('--process_pollen', default=False, action="store_true", help='Whether to apply pollen detection separately. Default is True')
 inference_parser.add_argument('--event_detection', default=False, action="store_true", help='Whether to apply event detection. Default is True')
-inference_parser.add_argument('--debug',type=bool,default=False,help='If debug is True logging will include profiling and other details')
+inference_parser.add_argument('--debug',action='store_true',help='If debug is True logging will include profiling and other details')
+inference_parser.add_argument('--workers',type=int,default=-1, help='Worker per GPU')
 inference_parser.set_defaults(func=inference_main)
 
 
