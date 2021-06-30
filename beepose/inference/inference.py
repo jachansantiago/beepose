@@ -11,13 +11,14 @@ import logging
 logger = logging.getLogger(__name__)
 import numba
 FPS=20
+PARALLEL = True
 
 # Color constant
 colors= [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0], \
           [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255], [85, 0, 255], \
           [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]]
 
-@numba.jit(nopython=True, parallel=True)
+@numba.jit(nopython=True, parallel=PARALLEL)
 def calculate_peaks(numparts,heatmap_avg):
     #Right now there is a score for every part since some parts are likely to need lower thresholds. 
     # TODO: Run grid search to find the ideal values. 

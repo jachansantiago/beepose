@@ -18,7 +18,7 @@ tabulate==0.8.6
 tensorpack==0.9.8
 tfmpl==1.0.2
 scikit-build
-numba==0.49.1
+numba==0.50.1
 keras==2.2.4
 keras-preprocessing==1.1.0
 scikit-image==0.15.0
@@ -27,7 +27,7 @@ scipy==1.2.1
 tqdm==4.32.1
 matplotlib==3.1.0
 pycocotools==2.0.0
-llvmlite==0.32.1
+llvmlite==0.33.0
 dask==1.2.2
 toolz==0.9.0
 pandas==0.25.1

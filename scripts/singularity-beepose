@@ -56,16 +56,18 @@ def beepose_args_options(beepose_args):
     for key, value in beepose_args.items():
         if key == "command" or key == "image":
             continue
-        options.append("--{}".format(key))
+        
         if key == "GPU" and value == []:
             continue
         elif key == "GPU":
-            options.append(" ".join(value))
+            options.append("--{}".format(key))
+            options += [str(v) for v in value]
         elif key == "debug" and value:
             options.append("--debug")
         elif key == "debug":
             continue
         else:
+            options.append("--{}".format(key))
             options.append("{}".format(value))
     return options
 
@@ -153,7 +155,7 @@ def launch_inference(args):
     cmd += mounts_opt
     cmd += [BEEPOSE_IMAGE, "inference"]
     cmd += beepose_args_options(beepose_args)
-    # print(cmd)
+    print(cmd)
     execute_job(cmd)
 
 
