@@ -3,6 +3,7 @@
 FROM tensorflow/tensorflow:1.15.0-gpu-py3
 
 ENV DEBIAN_FRONTEND=noninteractive 
+RUN apt-key del 7fa2af80 && apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub
 # ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 RUN apt-get update --fix-missing && apt-get install -y build-essential libcap-dev libsm6 libxext6 libxrender-dev python3-tk
 # RUN apt-get update --fix-missing && \

@@ -113,7 +113,7 @@ def inference(input_image,model, params, model_params,show=False,np1=19,np2=38,r
                 distance_tolerance=310,numparts=5,
                 mapIdx=[[0,1],[2,3],[4,5],[6,7],[8,9]],
                 limbSeq=[[1,3],[3,2],[2,4],[2,5],[1,2]],
-                image_type='BGR'):
+                image_type='BGR', return_heatmaps=False):
     """
     This function uses the model to generate the heatmaps and pafs then use them to produce the poses. 
     
@@ -186,6 +186,9 @@ def inference(input_image,model, params, model_params,show=False,np1=19,np2=38,r
         
     heatmap_avg =  heatmap[...] +heatmap_avg #/ len(multiplier)
     paf_avg =  paf[...] +paf_avg# / len(multiplier)
+
+    
+
     toc_resizing = time.time()
     logger.debug('Resizing prediction frame time is %.5f' % (toc_resizing - tic_resizing))
 
@@ -402,7 +405,8 @@ def inference(input_image,model, params, model_params,show=False,np1=19,np2=38,r
                                            360, 1)
                 cv2.fillConvexPoly(cur_canvas, polygon, colors[i])
                 canvas = cv2.addWeighted(canvas, 0.4, cur_canvas, 0.6, 0)
-    
+    if return_heatmaps:
+        return canvas,mappings,parts, heatmap_avg, paf_avg
     return canvas,mappings,parts
 
 
