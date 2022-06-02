@@ -1,0 +1,49 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH -p RM-shared
+#SBATCH -t 20:00:00
+#SBATCH --array=1-116
+#SBATCH --job-name=col01
+COLONY=col01
+
+#set -x
+date
+
+# Initialize conda 
+source $HOME/.bashrc
+conda activate apriltag
+
+echo "STARTED"
+
+EXE="/ocean/projects/cis210023p/chanj/apriltag/python/apriltagdetect.py"
+OMP_NUM_THREADS=4
+
+SHARED=/ocean/projects/cis210023p/shared
+TAG_MISSING_FOLDER="${SHARED}/tags_missing"
+COLONY_TAG_MISSING_FILE="${TAG_MISSING_FOLDER}/missing_videos_${COLONY}.txt"
+
+
+VIDEO_FOLDER="${SHARED}/gurabo10/videos/${COLONY}"
+TAG_FOLDER="${SHARED}/gurabo10/tags/${COLONY}"
+
+echo "COLONY: ${COLONY}"
+echo "FILE: ${COLONY_TAG_MISSING_FILE}"
+
+LINE=$(cat $COLONY_TAG_MISSING_FILE | sed -n "$SLURM_ARRAY_TASK_ID"p)
+LINE=($LINE)
+VIDEO_FILE="${VIDEO_FOLDER}/${LINE[0]}.mp4"
+FRAMES=${LINE[1]}
+OUTPUT_FOLDER="${TAG_FOLDER}/${LINE[0]}"
+OUTPUT_JSON="${OUTPUT_FOLDER}/tags_{f0:05d}-{f1:05d}.json"
+
+echo "VIDEO: ${VIDEO_FILE}"
+echo "FRAMES: ${FRAMES}"
+echo "OUTPUT_FOLDER: ${OUTPUT_FOLDER}"
+
+mkdir $OUTPUT_FOLDER
+
+$EXE -V $VIDEO_FILE -outdir $OUTPUT_FOLDER -outjson $OUTPUT_JSON  -f0 0 -f1 $FRAMES -1 -D=0 -fps 20.0 -t 4 -cvt 4 -F tag25h5inv -m -mv 2 -2 -x 2 -D 256 -rgb_mean
+
+wait

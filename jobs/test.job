@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH -p GPU-small
+#SBATCH --gres=gpu:1
+#SBATCH -t 0:01:00
+
+#set -x
+date
+
+NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
+
+# Initialize conda 
+source $HOME/.bashrc
+conda activate beepose
+
+IFS=', ' read -r -a PARSED_VIDEO_LIST<<< "$VIDEO_LIST"
+x1=${PARSED_VIDEO_LIST[@]:0:8}
+x2=${PARSED_VIDEO_LIST[@]:8:8}
+
+echo "srun -N 1 --ntasks 40 --nodelist=${NODES[0]} ./jobs/pbatch.sh $x1"
+# srun -N 1 --ntasks 40 --nodelist=${NODES[0]} $HOME/jobs/pbatch.sh $x1 &
+
+echo "srun -N 1 --ntasks 40 --nodelist=${NODES[1]} ./jobs/pbatch.sh $x2"
+# srun -N 1 --ntasks 40 --nodelist=${NODES[1]} $HOME/jobs/pbatch.sh $x2
+
+wait

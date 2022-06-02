@@ -1,0 +1,46 @@
+#!/bin/bash
+#SBATCH --output=/jet/home/chanj
+#SBATCH -N 2
+#SBATCH -p GPU-shared
+#SBATCH --gres=gpu:v100-32:8
+#SBATCH -t 4:00:00
+#SBATCH --array=1-15
+
+#set -x
+
+echo "STARTED"
+
+# Initialize conda 
+source $HOME/.bashrc
+conda activate plotbee
+
+SHARED=/ocean/projects/cis210023p/shared/
+VIDEOS_PATH=$SHARED/gurabo10/videos/col03/
+VIDEO_LIST_PATH=$SHARED/gurabo10/missing_videos.txt
+
+NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
+
+let START="($SLURM_ARRAY_TASK_ID - 1) * 16 + 1"
+let END="$SLURM_ARRAY_TASK_ID * 16"
+P="${START},${END}p"
+echo $P
+
+VIDEO_LIST=$(cat $VIDEO_LIST_PATH | sed -n $P)
+# Parse video list
+VIDEO_LIST=$(echo ${VIDEO_LIST[@]})
+read -r -a PARSED_VIDEO_LIST<<< "${VIDEO_LIST}"
+
+x1=${PARSED_VIDEO_LIST[@]:0:8}
+x2=${PARSED_VIDEO_LIST[@]:8:8}
+
+echo "srun -N 1 --ntasks 1 --cpus-per-task=40 --nodelist=${NODES[0]} $PROJECT/jobs/process_batch.sh $x1"
+srun -N 1 --ntasks 1 --cpus-per-task=40 --nodelist=${NODES[0]} $PROJECT/detections/scripts/process_batch.sh $x1 &
+
+echo "srun -N 1 --ntasks 1 --cpus-per-task=40 --nodelist=${NODES[1]} $PROJECT/jobs/process_batch.sh $x2"
+srun -N 1 --ntasks 1 --cpus-per-task=40 --nodelist=${NODES[1]} $PROJECT/detections/scripts/process_batch.sh $x2 &
+
+wait
+
+
+
+

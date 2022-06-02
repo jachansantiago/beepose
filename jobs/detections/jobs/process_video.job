@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH -p GPU-shared
+#SBATCH --gres=gpu:v100-32:1
+#SBATCH -t 4:00:00
+#SBATCH --ntasks-per-node=5
+#SBATCH --array=1-99
+#SBATCH --job-name=col08
+COLONY=col08
+
+#set -x
+date
+
+echo "STARTED"
+
+# Initialize conda 
+source $HOME/.bashrc
+conda activate beepose
+
+
+SHARED=/ocean/projects/cis210023p/shared
+VIDEOS_FOLDER="${SHARED}/gurabo10/videos/${COLONY}"
+VIDEO_LIST_PATH="${SHARED}/gurabo10/missing_videos_${COLONY}.txt"
+
+echo $VIDEO_LIST_PATH
+
+VIDEO_FILE=$(cat $VIDEO_LIST_PATH | sed -n "$SLURM_ARRAY_TASK_ID"p)
+VIDEO_PATH="$VIDEOS_FOLDER/$VIDEO_FILE"
+
+echo $VIDEO_PATH
+
+IMAGE=$SHARED/simages/beepose.sif
+MODEL=$SHARED/models/2019_col2_2stages_model/Inference_model.h5
+MODEL_PARAMS=$SHARED/models/2019_col2_2stages_model/model_params.json
+WORKERS=5
+
+OUTPUT="${SHARED}/gurabo10/detections/${COLONY}/"
+
+cd $SHARED
+
+echo "SIF IMAGE" $IMAGE
+echo "MODEL:" $MODEL
+echo "MODEL PARAMS:" $MODEL_PARAMS
+echo "OUTPUT:" $OUTPUT
+
+singularity-beepose --image $IMAGE inference --videos_path $VIDEO_PATH --model_day $MODEL --model_config $MODEL_PARAMS --output_folder $OUTPUT --GPU 0 --workers $WORKERS
+
+wait
+

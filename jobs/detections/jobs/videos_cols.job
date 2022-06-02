@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH -p GPU
+#SBATCH --gres=gpu:v100-32:8
+#SBATCH -t 3:00:00
+
+#set -x
+
+VIDEO_LIST="col01_13_01_R_190722170000.mp4,col05_65_01_R_190722170000.mp4,col09_13_01_R_190722170000.mp4,col03_13_01_R_190722170000.mp4,col06_16_02_R_190722170000.mp4,col10_13_02_R_190722170000.mp4,col04_13_02_R_190722170000.mp4,col08_13_02_R_190722170000.mp4"
+
+date
+
+NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
+
+# Initialize conda 
+source $HOME/.bashrc
+conda activate beepose
+
+IFS=', ' read -r -a PARSED_VIDEO_LIST<<< "$VIDEO_LIST"
+x1=${PARSED_VIDEO_LIST[@]:0:8}
+
+
+echo "srun -N 1 --ntasks 1 --cpus-per-task=40 --nodelist=${NODES[0]} $PROJECT/jobs/process_batch.sh $x1"
+srun -N 1 --ntasks 1 --cpus-per-task=40 --nodelist=${NODES[0]} $PROJECT/jobs/process_batch.sh $x1

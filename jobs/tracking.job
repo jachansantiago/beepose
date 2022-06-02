@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+#SBATCH -N 1
+#SBATCH -p RM-shared
+#SBATCH --mem=12000M
+#SBATCH -t 1:00:00
+#SBATCH --ntasks-per-node=6
+#SBATCH --array=1-10
+
+SHARED=/ocean/projects/cis210023p/shared/
+OUTPUT=/ocean/projects/cis210023p/shared/tracking
+
+# Initialize conda 
+source $HOME/.bashrc
+conda activate plotbee
+
+LINE=$(sed -n "$SLURM_ARRAY_TASK_ID"p $SHARED/left.txt)
+SK_FILE=$SHARED$LINE
+
+echo $SK_FILE
+echo $OUTPUT
+python $PROJECT/tag_tracking.py --skeleton_file $SK_FILE --output_folder $OUTPUT

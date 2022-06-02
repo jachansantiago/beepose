@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+#SBATCH -N 1
+#SBATCH -p RM-shared
+#SBATCH --mem=12000M
+#SBATCH -t 12:00:00
+#SBATCH --ntasks-per-node=6
+#SBATCH --array=1-94
+
+SHARED=/ocean/projects/cis210023p/shared/
+SKELETON_FOLDER=/ocean/projects/cis210023p/shared/tracking/
+
+# Initialize conda 
+source $HOME/.bashrc
+conda activate plotbee
+# LINE=$(sed -n "$SLURM_ARRAY_TASK_ID"p $SHARED/left_dataset.txt)
+SK_ID=$(sed -n "$SLURM_ARRAY_TASK_ID"p $SHARED/july_videos.txt)
+SK_FILE=$SKELETON_FOLDER$SK_ID
+
+echo $SK_FILE
+python $PROJECT/tag_dataset_extraction.py --file $SK_FILE

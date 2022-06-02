@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#SBATCH -N 2
+#SBATCH -p GPU
+#SBATCH --gres=gpu:v100-32:8
+#SBATCH -t 2:00:00
+
+#set -x
+date
+
+NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
+
+SHARED=/ocean/projects/cis210023p/shared
+IMAGE=$SHARED/simages/beepose.sif
+MODEL=$SHARED/models/2019_col2_2stages_model/Inference_model.h5
+MODEL_PARAMS=$SHARED/models/2019_col2_2stages_model/model_params.json
+OUTPUT=$SHARED/predictions
+
+VIDEO_FOLDER=$SHARED/videos/
+
+WORKERS=5
+
+cd $SHARED
+
+# Initialize conda 
+source $HOME/.bashrc
+conda activate beepose
+
+echo "SIF IMAGE" $IMAGE
+echo "MODEL:" $MODEL
+echo "MODEL PARAMS:" $MODEL_PARAMS
+echo "OUTPUT:" $OUTPUT
+
+i=0
+IFS=,
+for VIDEO in ${VIDEO_LIST[@]};
+do
+    GPU_ID=$(expr $i % 8)
+    NODE_ID=$(expr $i / 8)
+    echo ${NODES[$NODE_ID]}
+    echo "srun --ntasks 5 -N 1 --nodelist=${NODES[$NODE_ID]} singularity-beepose --image $IMAGE inference --videos_path $VIDEO_FOLDER$VIDEO --model_day $MODEL --model_config $MODEL_PARAMS --output_folder $OUTPUT --GPU $GPU_ID --workers $WORKERS &"
+    srun -N 1 --ntasks 5 --nodelist=${NODES[$NODE_ID]} singularity-beepose --image $IMAGE inference --videos_path $VIDEO_FOLDER$VIDEO --model_day $MODEL --model_config $MODEL_PARAMS --output_folder $OUTPUT --GPU $GPU_ID --workers $WORKERS &
+    ((i+=1))
+done
+IFS=$Field_Separator
+
+wait
+
